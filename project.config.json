@@ -1,0 +1,15 @@
+{
+  "miniprogramRoot": "miniprogram/",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true
+  },
+  "appid": "你的微信小程序appid",
+  "projectname": "MBTI故事测",
+  "libVersion": "3.7.0",
+  "condition": {}
+}

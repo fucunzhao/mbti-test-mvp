@@ -1,96 +1,110 @@
-# MBTI 故事测 — 部署手册（Supabase 版）
+# MBTI 故事测 — 部署手册（腾讯云 CloudBase 版）
 
 ## 架构
 
 ```
-微信小程序 ──── Supabase（Edge Functions + PostgreSQL）
-                ↑ 全部在 Supabase 内
+微信小程序 ←→ 腾讯云 CloudBase
+                  ├── 云函数（Node.js）   ← 你在这里
+                  ├── 云数据库（文档型）
+                  └── 云存储
 ```
 
-无需任何第三方服务器。后端逻辑用 Supabase Edge Functions（TypeScript/Deno），数据库用 Supabase PostgreSQL，全部跑在 Supabase 基础设施上。
+全部在腾讯云国内服务器上，低延迟、微信支付原生支持。
 
 ## 部署步骤
 
-### 1. 创建 Supabase 项目
-1. 访问 https://supabase.com → Sign up → 用 GitHub 登录
-2. New project → 名称 `mbti-test-mvp` → 设置密码 → 区域选新加坡
-3. 等待 1-2 分钟初始化
+### 1. 开通 CloudBase
+1. 访问 https://console.cloud.tencent.com/tcb
+2. 点「新建环境」→ 输入环境名称 `mbti-test`
+3. 选择「按量计费」（免费额度用完后才收费）
+4. 等待 1-2 分钟创建完成
 
-### 2. 导入数据库表
-1. 进入项目 → SQL Editor
-2. 粘贴 `supabase-schema.sql` 全部内容
-3. 点 **Run** → 5 张表自动创建
+### 2. 创建数据库集合
+CloudBase 控制台 → 数据库 → 新建集合：
 
-### 3. 部署 Edge Functions
-在本地终端执行（需安装 Supabase CLI）：
+| 集合名 | 说明 | 权限 |
+|-------|------|------|
+| `users` | 用户 | 所有用户可读，仅管理员可写 |
+| `answers` | 答题记录 | 所有用户可读，仅管理员可写 |
+| `orders` | 支付订单 | 所有用户可读，仅管理员可写 |
+| `unlocks` | 结果解锁记录 | 所有用户可读，仅管理员可写 |
 
-```bash
-# 1. 登录
-npx supabase login
+创建后在 **users 集合** → 添加一个索引：字段 `openid`，唯一索引。
 
-# 2. 关联项目
-npx supabase link --project-ref <你的项目引用ID>
-# 项目引用ID 在 Project Settings → General → Reference ID
+### 3. 部署云函数
+方式一：用微信开发者工具
+1. 安装微信开发者工具
+2. 导入项目，选择 `mbti-test-mvp` 目录
+3. 填入你的小程序 appid
+4. 右键 cloudfunctions → 同步云函数列表
+5. 逐个右键部署即可
 
-# 3. 部署所有函数
-npx supabase functions deploy wx-login
-npx supabase functions deploy submit-answers
-npx supabase functions deploy create-order
-npx supabase functions deploy pay-callback
-
-# 4. 设置环境变量（每个函数都需要）
-npx supabase secrets set SUPABASE_URL=https://xxx.supabase.co
-npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJxxx
-npx supabase secrets set WX_APPID=你的微信小程序appid
-npx supabase secrets set WX_SECRET=你的微信小程序secret
-```
-
-### 4. 获取 API 地址
-部署后每个函数有自己的 URL：
-```
-https://<项目引用ID>.supabase.co/functions/v1/wx-login
-https://<项目引用ID>.supabase.co/functions/v1/submit-answers
-https://<项目引用ID>.supabase.co/functions/v1/create-order
-https://<项目引用ID>.supabase.co/functions/v1/pay-callback
-```
-
-## 本地开发
+方式二：用 CloudBase CLI
 
 ```bash
-# 安装 Supabase CLI
-npm install -g supabase
+# 安装
+npm install -g @cloudbase/cli
 
-# 启动本地开发环境
-supabase start
+# 登录
+tcb login
 
-# 热重载开发某个函数
-supabase functions serve wx-login --env-file ./supabase/.env.local
+# 关联环境
+tcb env:switch mbti-test
+
+# 部署所有云函数
+tcb functions:deploy wx-login -e mbti-test
+tcb functions:deploy submit-answers -e mbti-test  
+tcb functions:deploy create-order -e mbti-test
+tcb functions:deploy pay-callback -e mbti-test
+tcb functions:deploy get-result -e mbti-test
 ```
 
-## 项目结构
+### 4. 配置微信支付（上线前）
+1. 在 CloudBase 控制台 → 微信支付 → 授权
+2. 填入微信支付商户号
+3. 在 `cloudfunctions/create-order/index.js` 中填入 `subMchId`
 
+### 5. 小程序前端调用示例
+
+```javascript
+// 微信小程序端调用云函数
+const wxCloud = require('wx-server-sdk')
+wxCloud.init()
+
+// 微信登录
+const result = await wxCloud.callFunction({
+  name: 'wx-login'
+})
+
+// 提交答案
+const answer = await wxCloud.callFunction({
+  name: 'submit-answers',
+  data: { mode: 'quick', answers: ['a','b','a',...] }
+})
+
+// 创建支付
+const order = await wxCloud.callFunction({
+  name: 'create-order',
+  data: { answer_id: answer.result.answer_id }
+})
+
+// 发起支付
+wx.requestPayment(order.result.pay_params)
+
+// 查询结果
+const result = await wxCloud.callFunction({
+  name: 'get-result',
+  data: { answer_id: 'xxx' }
+})
 ```
-mbti-test-mvp/
-├── index.html                          ← 纯前端测试页
-├── supabase/
-│   ├── schema.sql                      ← 数据库建表脚本
-│   ├── config.toml                     ← Supabase 配置
-│   └── functions/
-│       ├── wx-login/index.ts           ← 微信登录
-│       ├── submit-answers/index.ts     ← 提交答案+计算结果
-│       ├── create-order/index.ts       ← 创建支付订单
-│       └── pay-callback/index.ts       ← 支付回调处理
-├── README.md
-└── .gitignore
-```
 
-## 费用估算
+## 费用
 
-| 项目 | 免费额度 | 预估用量 | 费用 |
-|------|---------|---------|------|
-| 数据库 | 500MB | 远低于 | 免费 |
-| Edge Functions | 50万次/月 | 初期远低于 | 免费 |
-| 认证 | 50000用户/月 | 初期够用 | 免费 |
-| 带宽 | 5GB/月 | 够用 | 免费 |
+| 资源 | 免费额度 | MVP 够用吗 |
+|------|---------|-----------|
+| 云函数调用 | 100万次/月 | ✅ 远超够用 |
+| 数据库 | 2GB 存储 | ✅ 足够 |
+| CDN 流量 | 10GB/月 | ✅ 足够 |
+| 微信支付 | 0.6% 手续费 | 每单 0.99元 手续费约 0.006元 |
 
-Supabase 免费版足够支撑 MVP 阶段。
+CloudBase 免费额度足够 MVP 跑很久。

@@ -1,57 +1,55 @@
-# MBTI 16型人格情景测试 MVP
+# MBTI 故事测 — 16型人格情景测试 MVP
 
-## 项目简介
-
-基于情景故事题的 MBTI 性格测试系统。每道题都是一个生活小场景，让用户通过本能反应来判断自己的性格倾向。
-
-## 特性
-
-- **情景式题目**：告别抽象题目，每个问题都是一个有代入感的日常故事
-- **双模式**：24题精简版（5分钟） / 93题完整版（15分钟）
-- **结果历史**：支持保存测试记录，追踪自己不同时期的结果变化
-- **无需注册**：打开即测，结果自动保存在本地
-- **16型人格详解**：每种类型带详细性格描述
+基于生活故事的交互式性格测试系统。24题快速版 / 93题完整版，支持微信支付解锁结果。
 
 ## 技术栈
 
-- 前端：原生 HTML + CSS + JavaScript（零依赖）
-- 后端：Python 标准库 http.server（可选，仅用于保存历史记录）
-- 数据库：SQLite（可选，仅用于保存历史记录）
+| 层 | 技术 | 平台 |
+|---|------|------|
+| 小程序端 | 微信小程序 | 微信 |
+| 后端 | Node.js 云函数 | **腾讯云 CloudBase** |
+| 数据库 | 文档型数据库 | **腾讯云 CloudBase** |
+| 支付 | 微信支付 | 腾讯云内网直连 |
 
-## 快速开始
+## 架构
 
-### 方式一：纯前端（推荐，无需后端）
-
-直接打开 index.html 即可使用，结果保存在浏览器本地。
-
-### 方式二：完整版（带后端）
-
-```bash
-python3 server.py
+```
+微信小程序
+    ↓
+CloudBase 云函数 ← 内置微信登录+支付
+    ↓
+CloudBase 数据库（users/answers/orders/unlocks）
 ```
 
-访问 http://localhost:8000
+国内低延迟，微信生态原生支持，无需跨网络折腾。
 
 ## 项目结构
 
 ```
 mbti-test-mvp/
-├── index.html       # 主页面（含完整前端功能）
-├── server.py        # 后端服务（可选）
-├── README.md        # 项目说明
-├── start.sh         # 启动脚本（Linux/Mac）
-├── start.bat        # 启动脚本（Windows）
-└── data/            # 数据库目录（运行后自动生成）
+├── cloudfunctions/              ← 云函数（核心）
+│   ├── wx-login/               ← 微信登录
+│   ├── submit-answers/         ← 提交答案 + 计算结果
+│   ├── create-order/           ← 创建支付订单
+│   ├── pay-callback/           ← 支付回调解锁结果
+│   └── get-result/             ← 查询测试结果
+├── index.html                  ← 纯前端测试页（开发调试用）
+├── project.config.json         ← 微信开发者工具配置
+├── DEPLOY.md                   ← 部署手册
+└── README.md
 ```
 
-## API 接口
+## 快速部署
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/records | 获取所有测试记录 |
-| GET | /api/records/:id | 获取单条记录 |
-| POST | /api/records | 保存测试结果 |
+见 [DEPLOY.md](./DEPLOY.md)，5步完成：
+1. 开通 CloudBase → 2. 创建数据库集合 → 3. 部署云函数 → 4. 配置支付 → 5. 小程序联调
 
-## 题库来源
+## 前后端交互
 
-基于 MBTI-M 版本（93题）和 24题精简版改编，所有题目均重新设计为情景化故事形式。
+| 云函数 | 输入 | 输出 |
+|-------|------|------|
+| wx-login | `{ code }` | `{ id, openid }` |
+| submit-answers | `{ mode, answers }` | `{ answer_id, type, name }` |
+| create-order | `{ answer_id }` | `{ order_id, pay_params }` |
+| get-result | `{ answer_id }` | `{ locked, type, description }` |
+| pay-callback | 微信自动回调 | 自动解锁结果 |
