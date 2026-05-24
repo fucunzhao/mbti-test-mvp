@@ -1,0 +1,46 @@
+<view class="page-welcome">
+  <!-- 标题卡片 -->
+  <view class="card" style="padding:16px 24px;margin-top:8px">
+    <view class="card-header" style="margin:0">
+      <view class="title">🧠 16型人格情景测试</view>
+      <view class="subtitle">读个小故事，选出你的本能反应</view>
+    </view>
+  </view>
+
+  <!-- 欢迎卡片 -->
+  <view class="card" style="text-align:center">
+    <view class="hero">
+      <view class="emoji">🔮</view>
+      <text class="hero-title">你了解自己的性格吗？</text>
+      <text class="hero-desc">24个生活小故事，每个故事两种结局。\n选那个你真正会做的，不是你觉得"应该"做的。</text>
+    </view>
+
+    <view class="mode-grid">
+      <view class="mode-card" bindtap="startQuick">
+        <view class="icon">⚡</view>
+        <text class="mode-name">快速版</text>
+        <text class="mode-desc">24道题，每题都是一个小故事</text>
+        <text class="time-badge quick">~5分钟</text>
+      </view>
+      <view class="mode-card" bindtap="startFull">
+        <view class="icon">📖</view>
+        <text class="mode-name">完整版</text>
+        <text class="mode-desc">93道题，覆盖八大维度功能</text>
+        <text class="time-badge full">~15分钟</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 历史记录 -->
+  <view class="history-card">
+    <text class="history-title">📋 历史记录</text>
+    <view wx:if="{{records.length === 0}}" class="history-empty">暂无测试记录</view>
+    <view wx:for="{{records}}" wx:key="index" class="record-item">
+      <view>
+        <text class="rtype">{{item.type}}</text>
+        <text class="rname">{{item.name}}</text>
+      </view>
+      <text class="rtime">{{item.time}}</text>
+    </view>
+  </view>
+</view>

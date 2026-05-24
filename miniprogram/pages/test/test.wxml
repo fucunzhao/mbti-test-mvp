@@ -1,0 +1,42 @@
+<view class="page-test">
+  <view class="card">
+    <!-- 步骤条 -->
+    <view class="steps">
+      <view wx:for="{{totalQuestions}}" wx:key="index" class="step {{index < current ? 'done' : ''}} {{index === current ? 'active' : ''}}"></view>
+    </view>
+
+    <!-- 维度标签 -->
+    <view class="dim-tag {{dimClass}}">{{dimText}}</view>
+
+    <!-- 故事场景 -->
+    <view class="story-box">
+      <view class="label">📖 场景</view>
+      <text class="story-text">{{storyText}}</text>
+    </view>
+
+    <!-- 选项 -->
+    <view class="options">
+      <view class="opt {{selected === 'a' ? 'selected' : ''}}" bindtap="selectA" data-val="a">
+        <view class="key">A</view>
+        <text class="opt-text">{{optA}}</text>
+      </view>
+      <view class="opt {{selected === 'b' ? 'selected' : ''}}" bindtap="selectB" data-val="b">
+        <view class="key">B</view>
+        <text class="opt-text">{{optB}}</text>
+      </view>
+    </view>
+
+    <!-- 导航按钮 -->
+    <view class="nav-row">
+      <view class="btn btn-prev {{current === 0 ? 'hidden' : ''}}" bindtap="prevQuestion">← 上一题</view>
+      <view class="btn btn-next {{!canNext ? 'disabled' : ''}}" bindtap="nextQuestion">
+        {{isLast ? '🎯 查看结果' : '下一题 →'}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 进度 -->
+  <view class="progress-bar">
+    <text>已答 {{answeredCount}}/{{totalQuestions}} 题</text>
+  </view>
+</view>

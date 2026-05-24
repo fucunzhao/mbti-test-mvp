@@ -1,0 +1,36 @@
+{
+  "envId": "mbti-test-d3gjj6qb5c3c8981e",
+  "functionRoot": "cloudfunctions",
+  "functions": [
+    {
+      "name": "wx-login",
+      "timeout": 15,
+      "runtime": "Nodejs18.15",
+      "handler": "index.main"
+    },
+    {
+      "name": "submit-answers",
+      "timeout": 15,
+      "runtime": "Nodejs18.15",
+      "handler": "index.main"
+    },
+    {
+      "name": "create-order",
+      "timeout": 15,
+      "runtime": "Nodejs18.15",
+      "handler": "index.main"
+    },
+    {
+      "name": "pay-callback",
+      "timeout": 15,
+      "runtime": "Nodejs18.15",
+      "handler": "index.main"
+    },
+    {
+      "name": "get-result",
+      "timeout": 15,
+      "runtime": "Nodejs18.15",
+      "handler": "index.main"
+    }
+  ]
+}
