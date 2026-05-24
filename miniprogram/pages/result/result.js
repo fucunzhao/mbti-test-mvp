@@ -69,7 +69,7 @@ Page({
       name: 'get-result',
       data: { answer_id: answerId }
     }).then(res => {
-      if (res.result && res.result.is_paid) {
+      if (res.result && (res.result.locked === false || res.result.is_paid)) {
         this.setData({ isPaid: true })
       }
     }).catch(() => {})
