@@ -28,7 +28,7 @@
   },
   "appid": "wx28314b35ea7df2de",
   "projectname": "MBTI故事测",
-  "libVersion": "3.7.0",
+  "libVersion": "3.16.1",
   "condition": {},
   "compileType": "miniprogram",
   "simulatorPluginLibVersion": {},

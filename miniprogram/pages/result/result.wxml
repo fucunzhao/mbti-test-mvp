@@ -1,33 +1,31 @@
 <view class="page-result">
-  <view class="card" style="text-align:center">
-    <!-- 结果徽章 -->
+  <!-- 顶部结果卡片 -->
+  <view class="card">
     <view class="result-badge">{{resultType}}</view>
     <view class="result-type">{{resultType}}</view>
-    <view class="result-name">「{{resultName}}」</view>
+    <view class="result-name">{{resultName}}</view>
 
-    <!-- 四维分数 -->
-    <view class="dim-grid">
+    <!-- 四维分数条 -->
+    <view class="dim-bars">
       <block wx:for="{{dimResults}}" wx:key="dim">
-        <view class="dim-box" style="background: {{item.isLeft ? '#eef0ff' : '#f8f9ff'}}">
-          <view class="dl">{{item.dim}}</view>
-          <view class="dv" style="color: {{item.isLeft ? '#667eea' : '#764ba2'}}">{{item.letter}} | {{item.score}}/{{item.total}}</view>
-          <view class="dd">{{item.isLeft ? item.leftLabel : item.rightLabel}}</view>
+        <view class="dim-row">
+          <text class="dim-label">{{item.dim}}</text>
+          <view class="dim-bar-track">
+            <view class="dim-bar-fill" style="width:{{item.pct}}%;background:{{item.isLeft ? '#667eea' : '#764ba2'}}">
+              <text class="dim-bar-text">{{item.letter}} {{item.score}}/{{item.total}}</text>
+            </view>
+          </view>
         </view>
       </block>
     </view>
 
-    <!-- 结果描述 -->
-    <view class="desc-box">
-      <text>{{resultDesc}}</text>
-    </view>
-
-    <!-- 解锁/支付区域 -->
+    <!-- 未解锁状态 -->
     <view wx:if="{{!isPaid}}" class="pay-section">
       <view class="pay-divider"></view>
       <view class="pay-info">
         <text class="pay-icon">🔓</text>
-        <text class="pay-title">查看完整人格分析报告</text>
-        <text class="pay-desc">详细解读 + 职业建议 + 人际关系指南</text>
+        <text class="pay-title">解锁完整人格分析报告</text>
+        <text class="pay-desc">包含：类型概述 · 优势与待发展 · 职业建议 · 人际关系 · 沟通风格 · 成长指南</text>
       </view>
       <view class="pay-btn {{paying ? 'disabled' : ''}}" bindtap="doPay">
         <text wx:if="{{!paying}}">¥0.99 解锁完整报告</text>
@@ -35,14 +33,57 @@
       </view>
       <view class="pay-note">仅需支付一次，永久查看</view>
     </view>
+  </view>
 
-    <!-- 已解锁提示 -->
-    <view wx:if="{{isPaid}}" class="unlocked-badge">✅ 已解锁完整报告</view>
+  <!-- ===== 已解锁：完整报告 ===== -->
+  <view wx:if="{{isPaid && reportLoaded}}" class="report-section">
+    <view class="report-header">
+      <text class="report-title">{{resultType}} 完整人格评估报告</text>
+      <text class="report-subtitle">{{resultSummary}}</text>
+    </view>
 
-    <!-- 按钮组 -->
-    <view class="btn-group">
-      <view class="btn-primary" bindtap="goHome">🔄 重新测试</view>
-      <view class="btn-secondary" bindtap="shareResult">📤 分享结果</view>
+    <!-- 章节导航 -->
+    <scroll-view class="section-nav" scroll-x enable-flex>
+      <view class="nav-inner">
+        <view wx:for="{{sections}}" wx:key="key" 
+              class="nav-tab {{activeSection === index ? 'active' : ''}}"
+              data-index="{{index}}" bindtap="switchSection">
+          <text>{{item.label}}</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 章节内容 -->
+    <view class="section-content">
+      <view wx:if="{{sections[activeSection].key === 'coreTraits' || sections[activeSection].key === 'strengths' || sections[activeSection].key === 'weaknesses' || sections[activeSection].key === 'growth'}}">
+        <view class="section-list">
+          <view class="list-item" wx:for="{{sections[activeSection].content}}" wx:for-item="item" wx:key="*this">
+            <text class="list-bullet">✦</text>
+            <text class="list-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+      <view wx:elif="{{sections[activeSection].key === 'suitableCareers' || sections[activeSection].key === 'famousPeople'}}">
+        <view class="tag-group">
+          <text class="tag" wx:for="{{sections[activeSection].content}}" wx:for-item="item" wx:key="*this">{{item}}</text>
+        </view>
+      </view>
+      <view wx:else>
+        <text class="section-text">{{sections[activeSection].content}}</text>
+      </view>
     </view>
   </view>
+
+  <!-- 操作按钮组 -->
+  <view class="btn-group">
+    <view class="btn-primary" bindtap="goHome">🔄 重新测试</view>
+    <view class="btn-share" bindtap="saveReportImage">
+      <text>📤 分享结果图</text>
+      <text class="btn-sub">微信 · 朋友圈 · 保存</text>
+    </view>
+    <view class="btn-secondary" bindtap="copyResult">📋 复制结果文字</view>
+  </view>
+
+  <!-- 隐藏 Canvas 用于生成分享图 -->
+  <canvas type="2d" id="reportCanvas" style="width:340px;height:540px;position:fixed;left:-9999px;top:-9999px;"></canvas>
 </view>
